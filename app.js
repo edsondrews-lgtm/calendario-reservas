@@ -1,5 +1,4 @@
 // ═══ CONFIGURAÇÃO DO SUPABASE ═══
-// ═══ CONFIGURAÇÃO DO SUPABASE ═══
 // SUBSTITUA OS VALORES ABAIXO PELOS DADOS DO SEU PAINEL DO SUPABASE
 const SUPABASE_URL = "https://pkpftazklvittlhzdhgz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Vtn77Q1yZqNB1ZOhxRz9YA_LHP8K2l1";
@@ -12,6 +11,7 @@ const LAB_NAMES = { cyan: 'Laboratório Ciano', blue: 'Laboratório Azul' };
 
 let currentDate = new Date();
 let reservations = [];
+let editingReservationId = null; // Guarda o ID quando estiver editando
 
 // ═══ UTILITÁRIOS ═══
 function pad(n) { return String(n).padStart(2,'0'); }
@@ -174,18 +174,24 @@ function goToday() {
   render();
 }
 
-// ═══ MODAL NOVA RESERVA ═══
+// ═══ MODAL NOVA RESERVA / EDIÇÃO ═══
 function openNew() {
+  editingReservationId = null;
+  document.querySelector('.modal-new h2').textContent = "Nova Reserva";
   const t = new Date();
   document.getElementById('f-date').value = toKey(t.getFullYear(), t.getMonth(), t.getDate());
   clearForm();
   document.getElementById('overlay-new').classList.add('active');
 }
+
 function openNewDate(dateKey) {
+  editingReservationId = null;
+  document.querySelector('.modal-new h2').textContent = "Nova Reserva";
   clearForm();
   document.getElementById('f-date').value = dateKey;
   document.getElementById('overlay-new').classList.add('active');
 }
+
 function clearForm() {
   ['f-prof','f-curso','f-fase','f-prog','f-obs'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-start').value = '08:00';
@@ -193,7 +199,7 @@ function clearForm() {
   document.getElementById('f-lab').value = 'cyan';
 }
 
-// SALVAR RESERVA DIRETAMENTE NO BANCO DE DADOS
+// SALVAR OU ATUALIZAR RESERVA
 async function saveReservation() {
   const date  = document.getElementById('f-date').value;
   const lab   = document.getElementById('f-lab').value;
@@ -210,25 +216,25 @@ async function saveReservation() {
     return;
   }
 
-  try {
-    const { data, error } = await _supabase
-      .from('reservas')
-      .insert([
-        { 
-          date: date, 
-          lab: lab, 
-          prof: prof, 
-          curso: curso, 
-          fase: fase, 
-          start_time: start, 
-          end_time: end, 
-          prog: prog, 
-          obs: obs 
-        }
-      ])
-      .select();
+  const payload = { date, lab, prof, curso, fase, start_time: start, end_time: end, prog, obs };
 
-    if (error) throw error;
+  try {
+    if (editingReservationId) {
+      // ATUALIZAR RESERVA EXISTENTE (UPDATE)
+      const { error } = await _supabase
+        .from('reservas')
+        .update(payload)
+        .eq('id', editingReservationId);
+
+      if (error) throw error;
+    } else {
+      // INSERIR NOVA RESERVA (INSERT)
+      const { error } = await _supabase
+        .from('reservas')
+        .insert([payload]);
+
+      if (error) throw error;
+    }
 
     closeModal('overlay-new');
     fetchReservations();
@@ -325,11 +331,59 @@ function openDetail(id) {
       <div class="detail-row-label" style="margin-bottom:8px">Observações</div>
       <div class="detail-obs-box">${obsHtml}</div>
     </div>
-    <div class="modal-foot">
-      <button class="btn-ghost" onclick="closeModal('overlay-detail')">Fechar</button>
+    <div class="modal-foot-spaced">
+      <button class="btn-danger" onclick="deleteReservation(${r.id})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        Excluir
+      </button>
+      <div>
+        <button class="btn-ghost" onclick="startEdit(${r.id})" style="margin-right: 5px;">Editar</button>
+        <button class="btn-primary" onclick="closeModal('overlay-detail')">Fechar</button>
+      </div>
     </div>
   `;
   document.getElementById('overlay-detail').classList.add('active');
+}
+
+// ABRE O FORMULÁRIO COM OS DADOS PREENCHIDOS PARA EDITAR
+function startEdit(id) {
+  const r = reservations.find(x => x.id === id);
+  if (!r) return;
+
+  editingReservationId = id;
+  closeModal('overlay-detail');
+
+  document.querySelector('.modal-new h2').textContent = "Editar Reserva";
+  document.getElementById('f-date').value = r.date;
+  document.getElementById('f-lab').value = r.lab;
+  document.getElementById('f-prof').value = r.prof;
+  document.getElementById('f-curso').value = r.curso;
+  document.getElementById('f-fase').value = r.fase;
+  document.getElementById('f-start').value = r.start_time;
+  document.getElementById('f-end').value = r.end_time;
+  document.getElementById('f-prog').value = r.prog;
+  document.getElementById('f-obs').value = r.obs;
+
+  document.getElementById('overlay-new').classList.add('active');
+}
+
+// DELETAR RESERVA DO BANCO DE DADOS
+async function deleteReservation(id) {
+  if (!confirm("Tem certeza absoluta que deseja excluir esta reserva?")) return;
+
+  try {
+    const { error } = await _supabase
+      .from('reservas')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    closeModal('overlay-detail');
+    fetchReservations(); // Atualiza o calendário na hora
+  } catch (err) {
+    alert('Erro ao excluir a reserva: ' + err.message);
+  }
 }
 
 // ═══ FECHAR MODAIS ═══
