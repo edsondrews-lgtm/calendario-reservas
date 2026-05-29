@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reservas de Laboratórios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="site-logo">
+      <div class="site-logo-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 4h4v4H4V4zm6 0h4v4h-4V4zm6 0h4v4h-4V4zM4 10h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4zM4 16h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z"/>
+        </svg>
+      </div>
+      <div>
+        <span class="site-logo-text">Reservas de Laboratórios</span>
+        <span class="site-logo-sub">Gestão de uso dos espaços</span>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="openNew()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Nova Reserva
+    </button>
+  </header>
+
+  <main class="main">
+    <div class="stats-bar" id="stats-bar"></div>
+
+    <div class="cal-card">
+      <div class="cal-nav">
+        <div class="cal-nav-left">
+          <button class="btn-nav" onclick="changeMonth(-1)" title="Mês anterior">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h1 class="cal-month-title" id="cal-title">—</h1>
+          <button class="btn-nav" onclick="changeMonth(1)" title="Próximo mês">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <button class="btn-today" onclick="goToday()">Hoje</button>
+        </div>
+        <div class="cal-legend">
+          <div class="legend-pill"><div class="legend-swatch cyan"></div>Laboratório Ciano</div>
+          <div class="legend-pill"><div class="legend-swatch blue"></div>Laboratório Azul</div>
+        </div>
+      </div>
+      <div class="cal-weekdays">
+        <div class="cal-weekday">Dom</div>
+        <div class="cal-weekday">Seg</div>
+        <div class="cal-weekday">Ter</div>
+        <div class="cal-weekday">Qua</div>
+        <div class="cal-weekday">Qui</div>
+        <div class="cal-weekday">Sex</div>
+        <div class="cal-weekday">Sáb</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+  </main>
+
+  <div class="overlay" id="overlay-new" onclick="handleClose(event,'overlay-new')">
+    <div class="modal modal-new">
+      <div class="modal-head">
+        <h2>Nova Reserva</h2>
+        <button class="btn-close" onclick="closeModal('overlay-new')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="field-row">
+          <div class="field">
+            <label>Data</label>
+            <input type="date" id="f-date">
+          </div>
+          <div class="field">
+            <label>Laboratório</label>
+            <select id="f-lab">
+              <option value="cyan">Laboratório Ciano</option>
+              <option value="blue">Laboratório Azul</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Professor(a)</label>
+          <input type="text" id="f-prof" placeholder="Ex: Prof. Carlos Lima">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Curso</label>
+            <input type="text" id="f-curso" placeholder="Ex: Ciências Contábeis">
+          </div>
+          <div class="field">
+            <label>Fase / Turma</label>
+            <input type="text" id="f-fase" placeholder="Ex: 7ª Fase">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Horário de início</label>
+            <input type="time" id="f-start" value="08:00">
+          </div>
+          <div class="field">
+            <label>Horário de fim</label>
+            <input type="time" id="f-end" value="10:00">
+          </div>
+        </div>
+        <div class="field">
+          <label>Programa / Software</label>
+          <input type="text" id="f-prog" placeholder="Ex: Excel, AutoCAD, SPSS...">
+        </div>
+        <div class="field">
+          <label>Observações</label>
+          <textarea id="f-obs" placeholder="Alguma observação adicional sobre esta reserva..."></textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn-ghost" onclick="closeModal('overlay-new')">Cancelar</button>
+        <button class="btn-primary" onclick="saveReservation()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Salvar Reserva
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay-detail" onclick="handleClose(event,'overlay-detail')">
+    <div class="modal modal-detail" id="modal-detail-content">
+      </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
