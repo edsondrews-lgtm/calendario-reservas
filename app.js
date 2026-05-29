@@ -11,7 +11,7 @@ const LAB_NAMES = { cyan: 'Laboratório Ciano', blue: 'Laboratório Azul' };
 
 let currentDate = new Date();
 let reservations = [];
-let editingReservationId = null; // Guarda o ID quando estiver editando
+let editingReservationId = null; 
 
 // ═══ UTILITÁRIOS ═══
 function pad(n) { return String(n).padStart(2,'0'); }
@@ -177,7 +177,9 @@ function goToday() {
 // ═══ MODAL NOVA RESERVA / EDIÇÃO ═══
 function openNew() {
   editingReservationId = null;
-  document.querySelector('.modal-new h2').textContent = "Nova Reserva";
+  document.querySelector('.modal-new h2').textContent = "Nova Reserva / Recorrência";
+  document.getElementById('lbl-date-start').textContent = "Data de Início";
+  document.getElementById('field-date-end').style.display = "block"; // Exibe opção de repetir
   const t = new Date();
   document.getElementById('f-date').value = toKey(t.getFullYear(), t.getMonth(), t.getDate());
   clearForm();
@@ -186,52 +188,80 @@ function openNew() {
 
 function openNewDate(dateKey) {
   editingReservationId = null;
-  document.querySelector('.modal-new h2').textContent = "Nova Reserva";
+  document.querySelector('.modal-new h2').textContent = "Nova Reserva / Recorrência";
+  document.getElementById('lbl-date-start').textContent = "Data de Início";
+  document.getElementById('field-date-end').style.display = "block"; // Exibe opção de repetir
   clearForm();
   document.getElementById('f-date').value = dateKey;
   document.getElementById('overlay-new').classList.add('active');
 }
 
 function clearForm() {
-  ['f-prof','f-curso','f-fase','f-prog','f-obs'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('f-start').value = '08:00';
-  document.getElementById('f-end').value = '10:00';
+  ['f-prof','f-curso','f-fase','f-prog','f-obs', 'f-date-end'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-start').value = '19:00'; // Alterado para 19:00 padrão
+  document.getElementById('f-end').value = '22:35';   // Alterado para 22:35 padrão
   document.getElementById('f-lab').value = 'cyan';
 }
 
-// SALVAR OU ATUALIZAR RESERVA
+// SALVAR RESERVA (ÚNICA OU EM LOTE RECORRENTE)
 async function saveReservation() {
-  const date  = document.getElementById('f-date').value;
-  const lab   = document.getElementById('f-lab').value;
-  const prof  = document.getElementById('f-prof').value.trim();
-  const curso = document.getElementById('f-curso').value.trim();
-  const fase  = document.getElementById('f-fase').value.trim();
-  const start = document.getElementById('f-start').value;
-  const end   = document.getElementById('f-end').value;
-  const prog  = document.getElementById('f-prog').value.trim();
-  const obs   = document.getElementById('f-obs').value.trim();
+  const dateStartStr = document.getElementById('f-date').value;
+  const dateEndStr   = document.getElementById('f-date-end').value;
+  const lab          = document.getElementById('f-lab').value;
+  const prof         = document.getElementById('f-prof').value.trim();
+  const curso        = document.getElementById('f-curso').value.trim();
+  const fase         = document.getElementById('f-fase').value.trim();
+  const start        = document.getElementById('f-start').value;
+  const end          = document.getElementById('f-end').value;
+  const prog         = document.getElementById('f-prog').value.trim();
+  const obs          = document.getElementById('f-obs').value.trim();
   
-  if (!date || !prof || !curso) {
-    alert('Por favor, preencha a data, o professor e o curso.');
+  if (!dateStartStr || !prof || !curso) {
+    alert('Por favor, preencha a data de início, o professor e o curso.');
     return;
   }
 
-  const payload = { date, lab, prof, curso, fase, start_time: start, end_time: end, prog, obs };
+  // Base do objeto para salvar
+  const basePayload = { lab, prof, curso, fase, start_time: start, end_time: end, prog, obs };
 
   try {
     if (editingReservationId) {
-      // ATUALIZAR RESERVA EXISTENTE (UPDATE)
+      // ── MODO EDIÇÃO SINGLE ──
       const { error } = await _supabase
         .from('reservas')
-        .update(payload)
+        .update({ date: dateStartStr, ...basePayload })
         .eq('id', editingReservationId);
 
       if (error) throw error;
     } else {
-      // INSERIR NOVA RESERVA (INSERT)
+      // ── MODO CRIAÇÃO (VERIFICA RECORRÊNCIA) ──
+      let payloads = [];
+
+      if (dateEndStr) {
+        // Se preencheu a data final, gera a lista de datas com o mesmo dia da semana
+        let dAtual = new Date(dateStartStr + 'T00:00:00');
+        const dFim = new Date(dateEndStr + 'T00:00:00');
+
+        if (dFim < dAtual) {
+          alert('A data final não pode ser menor que a data de início!');
+          return;
+        }
+
+        // Loop pulando de 7 em 7 dias
+        while (dAtual <= dFim) {
+          const key = toKey(dAtual.getFullYear(), dAtual.getMonth(), dAtual.getDate());
+          payloads.push({ date: key, ...basePayload });
+          dAtual.setDate(dAtual.getDate() + 7);
+        }
+      } else {
+        // Reserva única tradicional
+        payloads.push({ date: dateStartStr, ...basePayload });
+      }
+
+      // Envia em lote tudo pro Supabase de uma só vez!
       const { error } = await _supabase
         .from('reservas')
-        .insert([payload]);
+        .insert(payloads);
 
       if (error) throw error;
     }
@@ -240,7 +270,7 @@ async function saveReservation() {
     fetchReservations();
     
   } catch (err) {
-    alert('Erro ao salvar a reserva: ' + err.message);
+    alert('Erro ao salvar: ' + err.message);
   }
 }
 
@@ -354,6 +384,9 @@ function startEdit(id) {
   closeModal('overlay-detail');
 
   document.querySelector('.modal-new h2').textContent = "Editar Reserva";
+  document.getElementById('lbl-date-start').textContent = "Data da Reserva";
+  document.getElementById('field-date-end').style.display = "none"; // Oculta a recorrência na edição simples
+
   document.getElementById('f-date').value = r.date;
   document.getElementById('f-lab').value = r.lab;
   document.getElementById('f-prof').value = r.prof;
@@ -380,7 +413,7 @@ async function deleteReservation(id) {
     if (error) throw error;
 
     closeModal('overlay-detail');
-    fetchReservations(); // Atualiza o calendário na hora
+    fetchReservations(); 
   } catch (err) {
     alert('Erro ao excluir a reserva: ' + err.message);
   }
