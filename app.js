@@ -12,6 +12,55 @@ const LAB_NAMES = { cyan: 'Laboratório Ciano', blue: 'Laboratório Azul' };
 let currentDate = new Date();
 let reservations = [];
 let editingReservationId = null; 
+let pendingAuthAction = null;
+
+// ═══ AUTENTICAÇÃO SIMPLES POR PIN ═══
+const AUTH_PIN_HASH = '17887b'; // Hash simples do PIN configurado
+
+function hashPin(pin) {
+  return Array.from(pin)
+    .reduce((acc, ch) => ((acc * 31) + ch.charCodeAt(0)) >>> 0, 0)
+    .toString(16);
+}
+
+function isAuthenticated() {
+  return sessionStorage.getItem('calendar_auth') === 'true';
+}
+
+function requireAuth(action) {
+  if (isAuthenticated()) {
+    action();
+    return;
+  }
+  pendingAuthAction = action;
+  document.getElementById('overlay-auth').classList.add('active');
+  document.getElementById('auth-pin').focus();
+}
+
+function submitAuth() {
+  const pin = document.getElementById('auth-pin').value.trim();
+  if (!pin) {
+    alert('Digite o PIN para continuar.');
+    return;
+  }
+  if (hashPin(pin) !== AUTH_PIN_HASH) {
+    alert('PIN incorreto.');
+    return;
+  }
+  sessionStorage.setItem('calendar_auth', 'true');
+  document.getElementById('overlay-auth').classList.remove('active');
+  document.getElementById('auth-pin').value = '';
+  if (pendingAuthAction) {
+    const action = pendingAuthAction;
+    pendingAuthAction = null;
+    action();
+  }
+}
+
+function resetAuth() {
+  document.getElementById('auth-pin').value = '';
+  document.getElementById('auth-pin').focus();
+}
 
 // ═══ UTILITÁRIOS ═══
 function pad(n) { return String(n).padStart(2,'0'); }
@@ -176,24 +225,28 @@ function goToday() {
 
 // ═══ MODAL NOVA RESERVA / EDIÇÃO ═══
 function openNew() {
-  editingReservationId = null;
-  document.querySelector('.modal-new h2').textContent = "Nova Reserva / Recorrência";
-  document.getElementById('lbl-date-start').textContent = "Data de Início";
-  document.getElementById('field-date-end').style.display = "block"; // Exibe opção de repetir
-  const t = new Date();
-  document.getElementById('f-date').value = toKey(t.getFullYear(), t.getMonth(), t.getDate());
-  clearForm();
-  document.getElementById('overlay-new').classList.add('active');
+  requireAuth(() => {
+    editingReservationId = null;
+    document.querySelector('.modal-new h2').textContent = "Nova Reserva / Recorrência";
+    document.getElementById('lbl-date-start').textContent = "Data de Início";
+    document.getElementById('field-date-end').style.display = "block"; // Exibe opção de repetir
+    const t = new Date();
+    document.getElementById('f-date').value = toKey(t.getFullYear(), t.getMonth(), t.getDate());
+    clearForm();
+    document.getElementById('overlay-new').classList.add('active');
+  });
 }
 
 function openNewDate(dateKey) {
-  editingReservationId = null;
-  document.querySelector('.modal-new h2').textContent = "Nova Reserva / Recorrência";
-  document.getElementById('lbl-date-start').textContent = "Data de Início";
-  document.getElementById('field-date-end').style.display = "block"; // Exibe opção de repetir
-  clearForm();
-  document.getElementById('f-date').value = dateKey;
-  document.getElementById('overlay-new').classList.add('active');
+  requireAuth(() => {
+    editingReservationId = null;
+    document.querySelector('.modal-new h2').textContent = "Nova Reserva / Recorrência";
+    document.getElementById('lbl-date-start').textContent = "Data de Início";
+    document.getElementById('field-date-end').style.display = "block"; // Exibe opção de repetir
+    clearForm();
+    document.getElementById('f-date').value = dateKey;
+    document.getElementById('overlay-new').classList.add('active');
+  });
 }
 
 function clearForm() {
@@ -377,46 +430,50 @@ function openDetail(id) {
 
 // ABRE O FORMULÁRIO COM OS DADOS PREENCHIDOS PARA EDITAR
 function startEdit(id) {
-  const r = reservations.find(x => x.id === id);
-  if (!r) return;
+  requireAuth(() => {
+    const r = reservations.find(x => x.id === id);
+    if (!r) return;
 
-  editingReservationId = id;
-  closeModal('overlay-detail');
+    editingReservationId = id;
+    closeModal('overlay-detail');
 
-  document.querySelector('.modal-new h2').textContent = "Editar Reserva";
-  document.getElementById('lbl-date-start').textContent = "Data da Reserva";
-  document.getElementById('field-date-end').style.display = "none"; // Oculta a recorrência na edição simples
+    document.querySelector('.modal-new h2').textContent = "Editar Reserva";
+    document.getElementById('lbl-date-start').textContent = "Data da Reserva";
+    document.getElementById('field-date-end').style.display = "none"; // Oculta a recorrência na edição simples
 
-  document.getElementById('f-date').value = r.date;
-  document.getElementById('f-lab').value = r.lab;
-  document.getElementById('f-prof').value = r.prof;
-  document.getElementById('f-curso').value = r.curso;
-  document.getElementById('f-fase').value = r.fase;
-  document.getElementById('f-start').value = r.start_time;
-  document.getElementById('f-end').value = r.end_time;
-  document.getElementById('f-prog').value = r.prog;
-  document.getElementById('f-obs').value = r.obs;
+    document.getElementById('f-date').value = r.date;
+    document.getElementById('f-lab').value = r.lab;
+    document.getElementById('f-prof').value = r.prof;
+    document.getElementById('f-curso').value = r.curso;
+    document.getElementById('f-fase').value = r.fase;
+    document.getElementById('f-start').value = r.start_time;
+    document.getElementById('f-end').value = r.end_time;
+    document.getElementById('f-prog').value = r.prog;
+    document.getElementById('f-obs').value = r.obs;
 
-  document.getElementById('overlay-new').classList.add('active');
+    document.getElementById('overlay-new').classList.add('active');
+  });
 }
 
 // DELETAR RESERVA DO BANCO DE DADOS
 async function deleteReservation(id) {
-  if (!confirm("Tem certeza absoluta que deseja excluir esta reserva?")) return;
+  requireAuth(async () => {
+    if (!confirm("Tem certeza absoluta que deseja excluir esta reserva?")) return;
 
-  try {
-    const { error } = await _supabase
-      .from('reservas')
-      .delete()
-      .eq('id', id);
+    try {
+      const { error } = await _supabase
+        .from('reservas')
+        .delete()
+        .eq('id', id);
 
-    if (error) throw error;
+      if (error) throw error;
 
-    closeModal('overlay-detail');
-    fetchReservations(); 
-  } catch (err) {
-    alert('Erro ao excluir a reserva: ' + err.message);
-  }
+      closeModal('overlay-detail');
+      fetchReservations(); 
+    } catch (err) {
+      alert('Erro ao excluir a reserva: ' + err.message);
+    }
+  });
 }
 
 // ═══ FECHAR MODAIS ═══
@@ -430,4 +487,7 @@ document.addEventListener('keydown', e => {
 });
 
 // ═══ INIT ═══
+if (isAuthenticated()) {
+  document.getElementById('overlay-auth').classList.remove('active');
+}
 fetchReservations();

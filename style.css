@@ -186,6 +186,8 @@ body {
 .btn-close svg { width: 16px; height: 16px; }
 
 .modal-new { max-width: 540px; }
+.modal-auth { max-width: 420px; }
+.modal-auth p { font-size: 14px; color: #4B4A48; line-height: 1.6; margin-bottom: 14px; }
 .modal-body { padding: 1.25rem 1.5rem; max-height: 75vh; overflow-y: auto; }
 .field { margin-bottom: 14px; }
 .field label { display: block; font-size: 12px; font-weight: 700; color: #44423E; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 6px; }
