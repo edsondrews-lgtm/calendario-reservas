@@ -1,7 +1,7 @@
 // ═══ CONFIGURAÇÃO DO SUPABASE ═══
 // SUBSTITUA OS VALORES ABAIXO PELOS DADOS DO SEU PAINEL DO SUPABASE
 const SUPABASE_URL = "https://pkpftazklvittlhzdhgz.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_Vtn77Q1yZqNB1ZOhxRz9YA_LHP8K2l1";
+const SUPABASE_ANON_KEY = "sb_publishable_Vtn77Q1yZqNB1ZOhxRz9YA_LHP8K2l1";https://github.com/edsondrews-lgtm/calendario-reservas/blob/main/app.js
 
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -15,7 +15,7 @@ let editingReservationId = null;
 let pendingAuthAction = null;
 
 // ═══ AUTENTICAÇÃO SIMPLES POR PIN ═══
-const AUTH_PIN_HASH = '17887b'; // Hash simples do PIN configurado
+const AUTH_PIN_HASH = '3432'; // Hash simples do PIN configurado
 
 function hashPin(pin) {
   return Array.from(pin)
