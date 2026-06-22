@@ -15,7 +15,7 @@ let editingReservationId = null;
 let pendingAuthAction = null;
 
 // ═══ AUTENTICAÇÃO SIMPLES POR PIN ═══
-const AUTH_PIN_HASH = '3432'; // Hash simples do PIN configurado
+const AUTH_PIN_HASH = '17887b'; // Hash simples do PIN configurado
 
 function hashPin(pin) {
   return Array.from(pin)
