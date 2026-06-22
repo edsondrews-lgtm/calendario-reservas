@@ -1,7 +1,7 @@
 // ═══ CONFIGURAÇÃO DO SUPABASE ═══
 // SUBSTITUA OS VALORES ABAIXO PELOS DADOS DO SEU PAINEL DO SUPABASE
 const SUPABASE_URL = "https://pkpftazklvittlhzdhgz.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_Vtn77Q1yZqNB1ZOhxRz9YA_LHP8K2l1";https://github.com/edsondrews-lgtm/calendario-reservas/blob/main/app.js
+const SUPABASE_ANON_KEY = "sb_publishable_Vtn77Q1yZqNB1ZOhxRz9YA_LHP8K2l1";
 
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -13,9 +13,9 @@ let currentDate = new Date();
 let reservations = [];
 let editingReservationId = null; 
 let pendingAuthAction = null;
+let authPinHash = null;
 
 // ═══ AUTENTICAÇÃO SIMPLES POR PIN ═══
-const AUTH_PIN_HASH = '17887b'; // Hash simples do PIN configurado
 
 function hashPin(pin) {
   return Array.from(pin)
@@ -23,6 +23,21 @@ function hashPin(pin) {
     .toString(16);
 }
 
+async function loadPinHash() {
+  try {
+    const { data, error } = await _supabase
+      .from('configuracoes')
+      .select('valor')
+      .eq('chave', 'auth_pin_hash')
+      .single();
+
+    if (error) throw error;
+
+    authPinHash = data.valor;
+  } catch (err) {
+    console.error('Erro ao carregar PIN:', err);
+  }
+}
 function isAuthenticated() {
   return sessionStorage.getItem('calendar_auth') === 'true';
 }
@@ -39,17 +54,26 @@ function requireAuth(action) {
 
 function submitAuth() {
   const pin = document.getElementById('auth-pin').value.trim();
+
   if (!pin) {
     alert('Digite o PIN para continuar.');
     return;
   }
-  if (hashPin(pin) !== AUTH_PIN_HASH) {
+
+  if (!authPinHash) {
+    alert('PIN ainda não foi carregado.');
+    return;
+  }
+
+  if (hashPin(pin) !== authPinHash) {
     alert('PIN incorreto.');
     return;
   }
+
   sessionStorage.setItem('calendar_auth', 'true');
   document.getElementById('overlay-auth').classList.remove('active');
   document.getElementById('auth-pin').value = '';
+
   if (pendingAuthAction) {
     const action = pendingAuthAction;
     pendingAuthAction = null;
@@ -487,7 +511,11 @@ document.addEventListener('keydown', e => {
 });
 
 // ═══ INIT ═══
-if (isAuthenticated()) {
-  document.getElementById('overlay-auth').classList.remove('active');
-}
-fetchReservations();
+(async () => {
+  if (isAuthenticated()) {
+    document.getElementById('overlay-auth').classList.remove('active');
+  }
+
+  await loadPinHash();
+  await fetchReservations();
+})();

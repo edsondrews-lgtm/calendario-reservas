@@ -11,7 +11,7 @@
 </head>
 <body>
 
-  <div id="overlay-auth" class="overlay active" onclick="handleClose(e, 'overlay-auth')">
+  <div id="overlay-auth" class="overlay active" onclick="handleClose(event, 'overlay-auth')">
     <div class="modal modal-auth">
       <div class="modal-head">
         <h2>Autenticação</h2>
@@ -20,7 +20,18 @@
         <p>Somente pessoas autorizadas podem criar, editar ou excluir reservas. Insira o PIN para continuar.</p>
         <div class="field">
           <label>PIN de acesso</label>
-          <input type="password" id="auth-pin" placeholder="••••" maxlength="6" autocomplete="off" />
+<input
+  type="password"
+  id="auth-pin"
+  placeholder="••••"
+  maxlength="6"
+  autocomplete="off"
+/>
+
+<small style="display:block;margin-top:6px;color:#666;">
+  Dica: Alarme
+</small>
+        
         </div>
       </div>
       <div class="modal-foot">
