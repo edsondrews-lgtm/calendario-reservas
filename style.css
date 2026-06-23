@@ -15,6 +15,11 @@
   --blue-dark: #0E3E72;
   --blue-text: #082443;
 
+  --aviso: #D97706;
+  --aviso-light: #FEF3C7;
+  --aviso-border: #FBC02D;
+  --aviso-text: #78350F;
+
   --bg: #F4F3EF;
   --surface: #FFFFFF;
   --surface2: #F9F8F5;
@@ -60,6 +65,13 @@ body {
 .site-logo-text { font-family: 'DM Serif Display', serif; font-size: 19px; color: #111110; letter-spacing: -0.01em; }
 .site-logo-sub { font-size: 11.5px; color: #55524D; font-weight: 500; display: block; margin-top: -1px; }
 
+.role-badge {
+  font-size: 11px; font-weight: 700; padding: 4px 12px;
+  border-radius: 20px; letter-spacing: 0.03em;
+}
+.role-badge.admin { background: var(--cyan-light); color: var(--cyan-dark); }
+.role-badge.viewer { background: #FEF3C7; color: #92400E; }
+
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -81,7 +93,10 @@ body {
 .btn-primary svg { width: 16px; height: 16px; }
 
 .main { max-width: 1280px; margin: 0 auto; padding: 1.75rem 2rem 3rem; }
-.cal-card { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border-md); box-shadow: var(--shadow); overflow: hidden; }
+.cal-card {
+  background: var(--surface); border-radius: var(--radius-lg);
+  border: 1px solid var(--border-md); box-shadow: var(--shadow);
+}
 .cal-nav { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); }
 .cal-nav-left { display: flex; align-items: center; gap: 12px; }
 .cal-month-title { font-family: 'DM Serif Display', serif; font-size: 24px; letter-spacing: -0.01em; color: #111110; min-width: 220px; }
@@ -158,6 +173,7 @@ body {
 .res-chip.blue { background: var(--blue-light); color: var(--blue-text); border-left: 3px solid var(--blue-dark); }
 .res-chip-name { font-weight: 700; display: block; line-height: 1.3; letter-spacing: -0.01em; }
 .res-chip-sub { font-size: 11px; opacity: 0.95; font-weight: 600; display: block; line-height: 1.2; margin-top: 2px; }
+.res-chip-curso { font-size: 11px; opacity: 0.8; font-weight: 500; display: block; line-height: 1.2; margin-top: 1px; }
 .more-badge { font-size: 11px; color: #55524D; padding: 2px 5px; display: block; font-weight: 700; }
 
 .stats-bar { display: flex; gap: 1rem; margin-bottom: 1.25rem; }
@@ -228,6 +244,35 @@ body {
 .detail-obs-empty { font-size: 13.5px; color: #66635D; font-style: italic; }
 .detail-divider { border: none; border-top: 1px solid var(--border-md); margin: 14px 0; }
 
+/* ═══ TARJA DE AVISO ═══ */
+#container-avisos { width: 100%; padding: 0; }
+.tarja-aviso {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: var(--aviso-light);
+  border-bottom: 1px solid var(--aviso-border);
+  color: var(--aviso-text);
+  padding: 14px 20px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* ═══ TOAST ═══ */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 18px; border-radius: var(--radius);
+  font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  box-shadow: var(--shadow-lg); border: 1px solid transparent;
+  opacity: 0; transform: translateY(8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+.toast-visible { opacity: 1; transform: translateY(0); }
+.toast-success { background: #ECFDF5; color: #065F46; border-color: #A7F3D0; }
+.toast-success svg { stroke: #059669; }
+.toast-error   { background: #FEF2F2; color: #991B1B; border-color: #FECACA; }
+.toast-error   svg { stroke: #DC2626; }
+
 @media (max-width: 768px) {
   .main { padding: 1rem; }
   .site-header { padding: 0 1rem; }
@@ -237,4 +282,5 @@ body {
   .res-chip-sub { display: none; }
   .field-row { grid-template-columns: 1fr; }
   .cal-legend { display: none; }
+  .toast { bottom: 16px; right: 16px; left: 16px; }
 }

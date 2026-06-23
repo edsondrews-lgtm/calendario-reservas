@@ -11,6 +11,7 @@
 </head>
 <body>
 
+  <!-- ═══ MODAL AUTENTICAÇÃO ═══ -->
   <div id="overlay-auth" class="overlay active" onclick="handleClose(event, 'overlay-auth')">
     <div class="modal modal-auth">
       <div class="modal-head">
@@ -20,18 +21,9 @@
         <p>Somente pessoas autorizadas podem criar, editar ou excluir reservas. Insira o PIN para continuar.</p>
         <div class="field">
           <label>PIN de acesso</label>
-<input
-  type="password"
-  id="auth-pin"
-  placeholder="••••"
-  maxlength="6"
-  autocomplete="off"
-/>
-
-<small style="display:block;margin-top:6px;color:#666;">
-  Dica: Alarme
-</small>
-        
+          <input type="password" id="auth-pin" placeholder="••••" maxlength="6" autocomplete="off"
+                 onkeydown="if(event.key==='Enter') submitAuth()">
+          <small style="display:block;margin-top:6px;color:#666;">Dica: Alarme</small>
         </div>
       </div>
       <div class="modal-foot">
@@ -41,6 +33,7 @@
     </div>
   </div>
 
+  <!-- ═══ HEADER ═══ -->
   <header class="site-header">
     <div class="site-logo">
       <div class="site-logo-icon">
@@ -51,16 +44,24 @@
         <span class="site-logo-sub">Gestão de uso dos espaços</span>
       </div>
     </div>
-    <button class="btn-primary" onclick="openNew()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Nova Reserva
-    </button>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="role-badge" class="role-badge" style="display:none"></span>
+      <button id="btn-new-reserva" class="btn-primary" onclick="openNew()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Nova Reserva
+      </button>
+    </div>
   </header>
 
+  <!-- ═══ MAIN ═══ -->
   <main class="main">
     <div id="stats-bar" class="stats-bar"></div>
 
     <div class="cal-card">
+      <div id="container-avisos"></div>
+
       <div class="cal-nav">
         <div class="cal-nav-left">
           <button class="btn-nav" onclick="changeMonth(-1)">
@@ -75,6 +76,7 @@
         <div class="cal-legend">
           <div class="legend-pill"><div class="legend-swatch cyan"></div>Laboratório Ciano</div>
           <div class="legend-pill"><div class="legend-swatch blue"></div>Laboratório Azul</div>
+          <div class="legend-pill"><div class="legend-swatch aviso"></div>Aviso</div>
         </div>
       </div>
 
@@ -88,37 +90,57 @@
     </div>
   </main>
 
-  <div id="overlay-new" class="overlay" onclick="handleClose(e, 'overlay-new')">
+  <!-- ═══ MODAL NOVA RESERVA / AVISO ═══ -->
+  <div id="overlay-new" class="overlay" onclick="handleClose(event, 'overlay-new')">
     <div class="modal modal-new">
       <div class="modal-head">
         <h2>Nova Reserva</h2>
         <button class="btn-close" onclick="closeModal('overlay-new')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
         </button>
       </div>
       <div class="modal-body">
+
+        <!-- Datas -->
         <div class="field-row">
           <div class="field">
             <label id="lbl-date-start">Data de Início</label>
             <input type="date" id="f-date">
           </div>
           <div class="field" id="field-date-end">
-            <label>Repetir até a data (Opcional)</label>
+            <label>Repetir até (Opcional)</label>
             <input type="date" id="f-date-end">
           </div>
         </div>
+
+        <!-- Tipo -->
         <div class="field">
+          <label>Tipo de Registro</label>
+          <select id="f-tipo" onchange="toggleFormFields()">
+            <option value="reserva">Reserva de Laboratório</option>
+            <option value="aviso">Aviso / Dinâmica</option>
+          </select>
+        </div>
+
+        <!-- Laboratório (oculto para aviso) -->
+        <div class="field" id="field-lab">
           <label>Laboratório</label>
           <select id="f-lab">
             <option value="cyan">Laboratório Ciano</option>
             <option value="blue">Laboratório Azul</option>
           </select>
         </div>
+
+        <!-- Professor / Título do aviso -->
         <div class="field">
-          <label>Professor(a)</label>
+          <label id="lbl-prof">Professor(a)</label>
           <input type="text" id="f-prof" placeholder="Ex: Prof. Anderson">
         </div>
-        <div class="field-row">
+
+        <!-- Curso + Fase (oculto para aviso) -->
+        <div class="field-row" id="field-curso">
           <div class="field">
             <label>Curso</label>
             <input type="text" id="f-curso" placeholder="Ex: Sistemas de Informação">
@@ -128,7 +150,9 @@
             <input type="text" id="f-fase" placeholder="Ex: 3ª">
           </div>
         </div>
-        <div class="field-row">
+
+        <!-- Horários (oculto para aviso) -->
+        <div class="field-row" id="field-horario">
           <div class="field">
             <label>Horário Início</label>
             <input type="time" id="f-start">
@@ -138,23 +162,29 @@
             <input type="time" id="f-end">
           </div>
         </div>
-        <div class="field">
+
+        <!-- Software (oculto para aviso) -->
+        <div class="field" id="field-prog">
           <label>Programa / Software Necessário</label>
           <input type="text" id="f-prog" placeholder="Ex: VS Code, SQL Server">
         </div>
-        <div class="field">
+
+        <!-- Observações (oculto para aviso) -->
+        <div class="field" id="field-obs">
           <label>Observações</label>
           <textarea id="f-obs" placeholder="Algum detalhe extra?"></textarea>
         </div>
+
       </div>
       <div class="modal-foot">
         <button class="btn-ghost" onclick="closeModal('overlay-new')">Cancelar</button>
-        <button class="btn-primary" onclick="saveReservation()">Salvar Reserva</button>
+        <button class="btn-primary" onclick="saveReservation()">Salvar</button>
       </div>
     </div>
   </div>
 
-  <div id="overlay-detail" class="overlay" onclick="handleClose(e, 'overlay-detail')">
+  <!-- ═══ MODAL DETALHE ═══ -->
+  <div id="overlay-detail" class="overlay" onclick="handleClose(event, 'overlay-detail')">
     <div class="modal modal-detail" id="modal-detail-content"></div>
   </div>
 
