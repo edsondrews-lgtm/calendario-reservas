@@ -202,6 +202,18 @@ body {
 .btn-close svg { width: 16px; height: 16px; }
 
 .modal-new { max-width: 540px; }
+.modal-report { max-width: 600px; }
+.modal-report .report-bar { background: #EFEFEA; border-radius: 6px; height: 8px; overflow: hidden; }
+.modal-report .report-bar-fill { height: 100%; border-radius: 6px; transition: width 0.3s; }
+.report-period-tabs { display: flex; gap: 6px; margin-bottom: 1.25rem; }
+.report-tab {
+  padding: 6px 16px; border-radius: 20px;
+  border: 1px solid var(--border-md); background: var(--surface);
+  font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  color: #44423E; cursor: pointer; transition: all 0.15s;
+}
+.report-tab:hover { border-color: var(--cyan-mid); color: var(--cyan); }
+.report-tab.active { background: var(--cyan); color: #fff; border-color: var(--cyan); }
 .modal-auth { max-width: 420px; }
 .modal-auth p { font-size: 14px; color: #4B4A48; line-height: 1.6; margin-bottom: 14px; }
 .modal-body { padding: 1.25rem 1.5rem; max-height: 75vh; overflow-y: auto; }

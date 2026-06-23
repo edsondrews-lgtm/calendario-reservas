@@ -46,6 +46,12 @@
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <span id="role-badge" class="role-badge" style="display:none"></span>
+      <button class="btn-ghost" onclick="openReport()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>
+        </svg>
+        Relatório
+      </button>
       <button id="btn-new-reserva" class="btn-primary" onclick="openNew()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -143,11 +149,31 @@
         <div class="field-row" id="field-curso">
           <div class="field">
             <label>Curso</label>
-            <input type="text" id="f-curso" placeholder="Ex: Sistemas de Informação">
+            <select id="f-curso">
+              <option value="">Selecione o curso</option>
+              <option value="Administração">Administração</option>
+              <option value="Agronomia">Agronomia</option>
+              <option value="Ciências Contábeis">Ciências Contábeis</option>
+              <option value="Ciência da Computação">Ciência da Computação</option>
+              <option value="Engenharia de Produção">Engenharia de Produção</option>
+              <option value="EAD">EAD</option>
+            </select>
           </div>
           <div class="field">
             <label>Fase</label>
-            <input type="text" id="f-fase" placeholder="Ex: 3ª">
+            <select id="f-fase">
+              <option value="">Selecione a fase</option>
+              <option value="1ª">1ª</option>
+              <option value="2ª">2ª</option>
+              <option value="3ª">3ª</option>
+              <option value="4ª">4ª</option>
+              <option value="5ª">5ª</option>
+              <option value="6ª">6ª</option>
+              <option value="7ª">7ª</option>
+              <option value="8ª">8ª</option>
+              <option value="9ª">9ª</option>
+              <option value="10ª">10ª</option>
+            </select>
           </div>
         </div>
 
@@ -186,6 +212,28 @@
   <!-- ═══ MODAL DETALHE ═══ -->
   <div id="overlay-detail" class="overlay" onclick="handleClose(event, 'overlay-detail')">
     <div class="modal modal-detail" id="modal-detail-content"></div>
+  </div>
+
+  <!-- ═══ MODAL RELATÓRIO ═══ -->
+  <div id="overlay-report" class="overlay" onclick="handleClose(event, 'overlay-report')">
+    <div class="modal modal-report">
+      <div class="modal-head">
+        <h2>Relatório de Uso por Curso</h2>
+        <button class="btn-close" onclick="closeModal('overlay-report')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="report-period-tabs">
+          <button class="report-tab active" data-period="month" onclick="changeReportPeriod('month')">Mês</button>
+          <button class="report-tab" data-period="semester" onclick="changeReportPeriod('semester')">Semestre</button>
+          <button class="report-tab" data-period="year" onclick="changeReportPeriod('year')">Ano</button>
+        </div>
+        <div id="report-content"></div>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

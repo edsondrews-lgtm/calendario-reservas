@@ -697,12 +697,116 @@ async function deleteReservation(id) {
 }
 
 // ═══ FECHAR MODAIS ═══
+// ═══ RELATÓRIO DE USO POR CURSO ═══
+let currentReportPeriod = 'month';
+
+function openReport() {
+  currentReportPeriod = 'month';
+  document.querySelectorAll('.report-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.period === 'month');
+  });
+  renderReport();
+  document.getElementById('overlay-report').classList.add('active');
+}
+
+function changeReportPeriod(period) {
+  currentReportPeriod = period;
+  document.querySelectorAll('.report-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.period === period);
+  });
+  renderReport();
+}
+
+function renderReport() {
+  const y = currentDate.getFullYear(), m = currentDate.getMonth();
+  const now = new Date();
+  
+  let filteredReservations = [];
+  let periodLabel = '';
+
+  if (currentReportPeriod === 'month') {
+    const monthKey = `${y}-${pad(m + 1)}`;
+    filteredReservations = reservations.filter(r => 
+      r.date.startsWith(monthKey) && r.tipo !== 'aviso'
+    );
+    periodLabel = `${MONTHS[m]} ${y}`;
+  } else if (currentReportPeriod === 'semester') {
+    const semester = m < 6 ? 1 : 2;
+    const yearStr = String(y);
+    filteredReservations = reservations.filter(r => {
+      if (r.tipo === 'aviso') return false;
+      const rYear = parseInt(r.date.substring(0, 4));
+      const rMonth = parseInt(r.date.substring(5, 7));
+      if (rYear !== y) return false;
+      if (semester === 1) return rMonth >= 1 && rMonth <= 6;
+      return rMonth >= 7 && rMonth <= 12;
+    });
+    periodLabel = `${semester}º Semestre ${y}`;
+  } else {
+    const yearStr = String(y);
+    filteredReservations = reservations.filter(r => 
+      r.date.startsWith(yearStr) && r.tipo !== 'aviso'
+    );
+    periodLabel = `Ano ${y}`;
+  }
+
+  const total = filteredReservations.length;
+  
+  if (total === 0) {
+    document.getElementById('report-content').innerHTML = `
+      <div style="text-align:center;padding:2rem;color:#66635D;">
+        <p>Nenhuma reserva encontrada para ${periodLabel}.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const cursoCount = {};
+  filteredReservations.forEach(r => {
+    const curso = r.curso || 'Não informado';
+    cursoCount[curso] = (cursoCount[curso] || 0) + 1;
+  });
+
+  const sortedCursos = Object.entries(cursoCount)
+    .sort((a, b) => b[1] - a[1]);
+
+  const colors = ['#0F7B6C', '#1A5FA8', '#D97706', '#7C3AED', '#DC2626', '#059669'];
+  
+  let html = `
+    <div style="margin-bottom:1.5rem;">
+      <div style="font-size:12px;color:#55524D;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">${periodLabel}</div>
+      <div style="font-size:14px;color:#55524D;margin-bottom:4px;">Total de reservas</div>
+      <div style="font-size:32px;font-weight:700;color:#111110;">${total}</div>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:#44423E;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;">Distribuição por Curso</div>
+  `;
+
+  sortedCursos.forEach(([curso, count], i) => {
+    const pct = ((count / total) * 100).toFixed(1);
+    const color = colors[i % colors.length];
+    html += `
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:14px;font-weight:600;color:#111110;">${curso}</span>
+          <span style="font-size:13px;color:#55524D;">${count} reserva(s) — ${pct}%</span>
+        </div>
+        <div style="background:#EFEFEA;border-radius:6px;height:8px;overflow:hidden;">
+          <div style="background:${color};width:${pct}%;height:100%;border-radius:6px;transition:width 0.3s;"></div>
+        </div>
+      </div>
+    `;
+  });
+
+  document.getElementById('report-content').innerHTML = html;
+}
+
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 function handleClose(e, id) { if (e.target.id === id) closeModal(id); }
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeModal('overlay-new');
     closeModal('overlay-detail');
+    closeModal('overlay-report');
   }
 });
 
